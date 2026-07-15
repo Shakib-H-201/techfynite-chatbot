@@ -1,1 +1,0 @@
-venv/ init git add . git commit -m "Initial commit - Techfynite chatbot" git branch -M main git remote add origin https://github.com/Shakib-H-201/techfynite-chatbot.git git push -u origin main
