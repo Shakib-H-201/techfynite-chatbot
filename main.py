@@ -60,7 +60,10 @@ app = FastAPI(title="TechFynite Chatbot API")
 # domain(s), e.g. [ALLOWED_ORIGIN].
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://www.techfynite.com",
+        "https://techfynite.com",
+    ],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
