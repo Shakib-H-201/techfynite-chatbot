@@ -143,7 +143,7 @@
 
     /* Panel */
     ".tf-panel{position:absolute;bottom:76px;" + side + ":0;width:396px;max-width:calc(100vw - 32px);height:620px;max-height:calc(100vh - 120px);",
-    "background:#ffffff;border-radius:22px;box-shadow:0 24px 60px rgba(15,23,42,0.28);display:flex;flex-direction:column;overflow:hidden;",
+    "background:#ffffff;border-radius:22px;box-shadow:0 24px 60px rgba(15,23,42,0.28);display:flex;flex-direction:column;overflow:hidden;overscroll-behavior:contain;",
     "opacity:0;transform:translateY(12px) scale(.98);pointer-events:none;transition:opacity .18s ease, transform .18s ease;}",
     ".tf-panel.tf-open{opacity:1;transform:translateY(0) scale(1);pointer-events:auto;}",
     ".tf-panel.tf-minimized .tf-messages, .tf-panel.tf-minimized .tf-inputbar, .tf-panel.tf-minimized .tf-footer-note{display:none;}",
@@ -341,16 +341,56 @@
   var menu = wrapper.querySelector(".tf-menu");
   var newConvoBtn = wrapper.querySelector(".tf-new-convo");
   var messagesEl = wrapper.querySelector("#tf-messages");
-  messagesEl.addEventListener("wheel", function (e) {
-  e.preventDefault();
-  e.stopPropagation();
 
-  messagesEl.scrollTop += e.deltaY;
-}, { passive: false });
+  // ---- Scroll-lock: never let scrolling inside the chat bleed into the
+  // page behind it. CSS overscroll-behavior handles most modern browsers,
+  // but this JS-level guard is the reliable fallback for every browser
+  // and for trackpad/touch gestures that don't always respect it.
+  (function attachScrollLock(el) {
+    function clamp(val, min, max) {
+      return Math.min(Math.max(val, min), max);
+    }
 
-messagesEl.addEventListener("touchmove", function (e) {
-  e.stopPropagation();
-}, { passive: true });
+    el.addEventListener(
+      "wheel",
+      function (e) {
+        var max = el.scrollHeight - el.clientHeight;
+        if (max <= 0) {
+          e.preventDefault();
+          return;
+        }
+        el.scrollTop = clamp(el.scrollTop + e.deltaY, 0, max);
+        e.preventDefault();
+      },
+      { passive: false }
+    );
+
+    var touchStartY = 0;
+    el.addEventListener(
+      "touchstart",
+      function (e) {
+        touchStartY = e.touches[0].clientY;
+      },
+      { passive: true }
+    );
+    el.addEventListener(
+      "touchmove",
+      function (e) {
+        var currentY = e.touches[0].clientY;
+        var deltaY = touchStartY - currentY;
+        var atTop = el.scrollTop <= 0;
+        var atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+        // Only block the page from scrolling when the gesture would push
+        // past the top or bottom edge of the chat; otherwise let the chat
+        // itself scroll normally.
+        if ((atTop && deltaY < 0) || (atBottom && deltaY > 0)) {
+          e.preventDefault();
+        }
+      },
+      { passive: false }
+    );
+  })(messagesEl);
+
   var input = wrapper.querySelector("#tf-input");
   var sendBtn = wrapper.querySelector("#tf-send");
   var iconChat = wrapper.querySelector(".tf-icon-chat");
