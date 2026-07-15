@@ -39,7 +39,7 @@
     );
   }
 
-  var API_URL = cfg("data-api-url", "apiUrl", "http://localhost:8000");
+  var API_URL = cfg("data-api-url", "apiUrl", "https://techfynite-chatbot.onrender.com");
   var POSITION = cfg("data-position", "position", "bottom-right"); // "bottom-right" | "bottom-left"
   var PRIMARY = cfg("data-primary-color", "primaryColor", "#2563eb");
   var PRIMARY_DARK = cfg("data-primary-dark", "primaryColorDark", "#1d4ed8");
