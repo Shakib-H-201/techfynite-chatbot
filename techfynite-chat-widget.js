@@ -178,7 +178,7 @@
     ".tf-menu-item:hover{background:#f3f4f8;}",
 
     /* Messages */
-    ".tf-messages{flex:1;overflow-y:auto;padding:18px 16px;display:flex;flex-direction:column;gap:12px;background:#fafafc;}",
+    ".tf-messages{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;padding:18px 16px;display:flex;flex-direction:column;gap:12px;background:#fafafc;}",
     ".tf-messages::-webkit-scrollbar{width:6px;}",
     ".tf-messages::-webkit-scrollbar-thumb{background:#d9dae3;border-radius:10px;}",
     ".tf-msg{max-width:86%;padding:11px 14px;border-radius:16px;font-size:13.5px;line-height:1.55;word-wrap:break-word;}",
@@ -341,6 +341,13 @@
   var menu = wrapper.querySelector(".tf-menu");
   var newConvoBtn = wrapper.querySelector(".tf-new-convo");
   var messagesEl = wrapper.querySelector("#tf-messages");
+  messagesEl.addEventListener("wheel", function (e) {
+  e.stopPropagation();
+}, { passive: true });
+
+messagesEl.addEventListener("touchmove", function (e) {
+  e.stopPropagation();
+}, { passive: true });
   var input = wrapper.querySelector("#tf-input");
   var sendBtn = wrapper.querySelector("#tf-send");
   var iconChat = wrapper.querySelector(".tf-icon-chat");
