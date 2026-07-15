@@ -342,8 +342,11 @@
   var newConvoBtn = wrapper.querySelector(".tf-new-convo");
   var messagesEl = wrapper.querySelector("#tf-messages");
   messagesEl.addEventListener("wheel", function (e) {
+  e.preventDefault();
   e.stopPropagation();
-}, { passive: true });
+
+  messagesEl.scrollTop += e.deltaY;
+}, { passive: false });
 
 messagesEl.addEventListener("touchmove", function (e) {
   e.stopPropagation();
