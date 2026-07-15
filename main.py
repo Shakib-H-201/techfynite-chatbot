@@ -109,6 +109,14 @@ def to_gemini_history(messages: list[ChatMessage]) -> list[dict]:
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
+@app.get("/")
+def root():
+    return {
+        "name": "Techfynite AI API",
+        "status": "Live",
+        "version": "1.0"
+    }
+
 @app.get("/health")
 def health_check():
     """Simple endpoint to confirm the server is alive - useful for uptime checks."""
