@@ -63,7 +63,19 @@
   // ---- Host element + Shadow DOM ----------------------------------------
   var host = document.createElement("div");
   host.id = "techfynite-chat-widget-host";
-  document.body.appendChild(host);
+  host.style.position = "relative";
+  host.style.zIndex = "2147483000";
+  // Appending to <html> (not <body>) is deliberate: some site builders
+  // (e.g. Framer's Lenis-based Smooth Scroll effect) wrap all of <body>'s
+  // content in a container that gets CSS-transformed for the smooth-scroll
+  // animation. Per the CSS spec, a transformed ancestor becomes the
+  // containing block for any `position: fixed` descendant, so the widget
+  // would end up positioned/sized relative to that wrapper instead of the
+  // real viewport - causing exactly the "cut off on mobile" / "moves when
+  // scrolling" symptoms. Attaching to <html> keeps the widget a sibling of
+  // <body> instead of a descendant, so it's never affected by whatever
+  // <body>'s children do.
+  document.documentElement.appendChild(host);
   var root = host.attachShadow({ mode: "open" });
 
   var side = isLeft ? "left" : "right";
