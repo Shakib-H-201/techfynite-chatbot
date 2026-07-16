@@ -65,6 +65,16 @@
   host.id = "techfynite-chat-widget-host";
   host.style.position = "relative";
   host.style.zIndex = "2147483000";
+  // Critical for Lenis (and similar smooth-scroll libraries): they check
+  // event.target.closest('[data-lenis-prevent]') from a listener OUTSIDE
+  // this component. Because wheel/touch events that cross a Shadow DOM
+  // boundary get "retargeted" to the shadow host for any listener outside
+  // the shadow tree, the exclusion attribute must live here - on the real
+  // host element - not on anything inside the shadow root, or Lenis will
+  // never see it and will keep hijacking scroll over the widget.
+  host.setAttribute("data-lenis-prevent", "");
+  host.setAttribute("data-lenis-prevent-wheel", "");
+  host.setAttribute("data-lenis-prevent-touch", "");
   // Appending to <html> (not <body>) is deliberate: some site builders
   // (e.g. Framer's Lenis-based Smooth Scroll effect) wrap all of <body>'s
   // content in a container that gets CSS-transformed for the smooth-scroll
