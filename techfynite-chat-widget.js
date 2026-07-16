@@ -294,6 +294,7 @@
   // ---- Markup -------------------------------------------------------------
   var wrapper = document.createElement("div");
   wrapper.className = "tf-root";
+  wrapper.setAttribute("data-lenis-prevent", "");
   wrapper.innerHTML =
     '<button class="tf-launcher" aria-label="Open chat">' +
       '<span class="tf-pulse-ring"></span>' +
@@ -317,7 +318,7 @@
         '</div>' +
         '<div class="tf-menu"><button class="tf-menu-item tf-new-convo">\u21BB Start New Conversation</button></div>' +
       '</div>' +
-      '<div class="tf-messages" id="tf-messages"></div>' +
+      '<div class="tf-messages" id="tf-messages" data-lenis-prevent data-lenis-prevent-wheel data-lenis-prevent-touch></div>' +
       '<div class="tf-inputbar">' +
         '<div class="tf-input-wrap">' +
           '<textarea class="tf-input" id="tf-input" rows="1" placeholder="Describe your project idea..."></textarea>' +
