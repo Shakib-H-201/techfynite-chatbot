@@ -75,17 +75,14 @@
   host.setAttribute("data-lenis-prevent", "");
   host.setAttribute("data-lenis-prevent-wheel", "");
   host.setAttribute("data-lenis-prevent-touch", "");
-  // Appending to <html> (not <body>) is deliberate: some site builders
-  // (e.g. Framer's Lenis-based Smooth Scroll effect) wrap all of <body>'s
-  // content in a container that gets CSS-transformed for the smooth-scroll
-  // animation. Per the CSS spec, a transformed ancestor becomes the
-  // containing block for any `position: fixed` descendant, so the widget
-  // would end up positioned/sized relative to that wrapper instead of the
-  // real viewport - causing exactly the "cut off on mobile" / "moves when
-  // scrolling" symptoms. Attaching to <html> keeps the widget a sibling of
-  // <body> instead of a descendant, so it's never affected by whatever
-  // <body>'s children do.
-  document.documentElement.appendChild(host);
+  // Appending to <body> (the standard place). An earlier version of this
+  // widget appended to <html> instead, to try to escape a potentially
+  // transformed wrapper - but that turned out to cause mobile viewport
+  // sizing/positioning bugs (appending outside <body> is non-standard and
+  // some mobile browsers miscompute position:fixed for it). The real fix
+  // for the scroll-hijacking issue was the data-lenis-prevent attribute
+  // above, so we can safely use the standard <body> attachment here.
+  document.body.appendChild(host);
   var root = host.attachShadow({ mode: "open" });
 
   var side = isLeft ? "left" : "right";
