@@ -306,7 +306,7 @@
     ".tf-footer-powered{font-size:10px;color:#b3b5c4;}",
     ".tf-footer-powered b{color:" + PRIMARY + ";font-weight:650;}",
 
-    "@media (max-width:480px){.tf-panel{width:calc(100vw - 24px);" + otherSide + ":-6px;}}"
+    "@media (max-width:480px){.tf-panel{width:calc(100vw - 48px);}}"
   ].join("\n");
   root.appendChild(styleTag);
 
