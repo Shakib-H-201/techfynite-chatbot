@@ -1,13 +1,9 @@
 /**
- * Techfynite AI - Product Consultant Widget
- * ------------------------------------------------------------------
- * Drop-in floating chat widget for the Techfynite website (Framer).
- * Premium "AI Product Consultant" experience: rich welcome screen with
- * feature tags + category cards + popular questions, no sticky CTAs
- * (links appear contextually inside replies), suggested-reply chips,
- * and lightly formatted (bold/bullets) messages.
+ * Techfynite chat widget (Maya).
+ * Floating chat bubble for the Techfynite site - built to feel like a
+ * product consultant chatting with you rather than a support bot.
  *
- * USAGE (paste into Framer > Site Settings > Custom Code > End of <body>):
+ * Drop this in Framer's Custom Code (End of <body>):
  *
  *   <script
  *     src="https://YOUR-CDN-OR-HOST/techfynite-chat-widget.js"
@@ -19,17 +15,14 @@
  *     data-contact-url="https://www.techfynite.com/contact-us"
  *   ></script>
  *
- * Every data-* attribute above is optional - remove any you don't want
- * to override and the widget falls back to the Techfynite defaults.
- *
- * Everything is scoped inside a Shadow DOM so it can never break, or be
- * broken by, Framer's own CSS.
- * ------------------------------------------------------------------
+ * All the data-* attributes are optional, they just override defaults.
+ * Runs inside a Shadow DOM so the site's CSS can't mess with it (and
+ * vice versa).
  */
 (function () {
   "use strict";
 
-  // ---- Config -----------------------------------------------------------
+  // ---- config ----
   var currentScript = document.currentScript;
   function cfg(attr, fallbackKey, defaultValue) {
     return (
@@ -49,46 +42,34 @@
   var CONTACT_URL = cfg("data-contact-url", "contactUrl", "https://www.techfynite.com/contact-us");
   var ASSISTANT_NAME = cfg("data-assistant-name", "assistantName", "Maya");
   var ASSISTANT_ROLE = cfg("data-assistant-role", "assistantRole", "Product Consultant at Techfynite");
-  // Optional: once you have a real illustrated/photo avatar hosted somewhere,
-  // set data-avatar-url="https://.../maya.png" and it replaces the icon below
-  // automatically - no other code changes needed.
+  // set data-avatar-url to swap in a real photo for Maya's avatar
   var AVATAR_URL = cfg("data-avatar-url", "avatarUrl", "");
-  // Optional: your real Techfynite logo image, replacing the "TF" square
-  // in the header once you have one hosted somewhere.
+  // same idea for the logo - replaces the "TF" square in the header
   var LOGO_URL = cfg("data-logo-url", "logoUrl", "");
 
   var isLeft = POSITION === "bottom-left";
   var STORAGE_KEY = "techfynite_chat_history_v1";
 
-  // ---- Host element + Shadow DOM ----------------------------------------
+  // ---- create the shadow root ----
   var host = document.createElement("div");
   host.id = "techfynite-chat-widget-host";
   host.style.position = "relative";
   host.style.zIndex = "2147483000";
-  // Critical for Lenis (and similar smooth-scroll libraries): they check
-  // event.target.closest('[data-lenis-prevent]') from a listener OUTSIDE
-  // this component. Because wheel/touch events that cross a Shadow DOM
-  // boundary get "retargeted" to the shadow host for any listener outside
-  // the shadow tree, the exclusion attribute must live here - on the real
-  // host element - not on anything inside the shadow root, or Lenis will
-  // never see it and will keep hijacking scroll over the widget.
+  // Tells Lenis (Framer's smooth-scroll effect) to leave our scrolling
+  // alone. Has to be on this outer element, not inside the shadow root -
+  // Lenis can't see past the shadow boundary.
   host.setAttribute("data-lenis-prevent", "");
   host.setAttribute("data-lenis-prevent-wheel", "");
   host.setAttribute("data-lenis-prevent-touch", "");
-  // Appending to <body> (the standard place). An earlier version of this
-  // widget appended to <html> instead, to try to escape a potentially
-  // transformed wrapper - but that turned out to cause mobile viewport
-  // sizing/positioning bugs (appending outside <body> is non-standard and
-  // some mobile browsers miscompute position:fixed for it). The real fix
-  // for the scroll-hijacking issue was the data-lenis-prevent attribute
-  // above, so we can safely use the standard <body> attachment here.
+  // (tried attaching to <html> at one point to dodge a scroll bug, but
+  // that broke mobile positioning - body is the right place)
   document.body.appendChild(host);
   var root = host.attachShadow({ mode: "open" });
 
   var side = isLeft ? "left" : "right";
   var otherSide = isLeft ? "right" : "left";
 
-  // ---- Small inline icon library (stroke-based, 24x24 viewBox) -------------
+  // small set of hand-drawn icons, all 24x24
   var ICONS = {
     rocket:
       '<path d="M12 3c2.5 1.7 4 4.6 4 8 0 2-.5 3.6-1.2 5H9.2C8.5 14.6 8 13 8 11c0-3.4 1.5-6.3 4-8Z" fill="currentColor" fill-opacity=".16"/>' +
@@ -310,7 +291,7 @@
   ].join("\n");
   root.appendChild(styleTag);
 
-  // ---- Markup -------------------------------------------------------------
+  // ---- HTML ----
   var wrapper = document.createElement("div");
   wrapper.className = "tf-root";
   wrapper.setAttribute("data-lenis-prevent", "");
@@ -353,7 +334,7 @@
     '</div>';
   root.appendChild(wrapper);
 
-  // ---- Element references --------------------------------------------------
+  // ---- grab the elements we'll need ----
   var launcher = wrapper.querySelector(".tf-launcher");
   var panel = wrapper.querySelector(".tf-panel");
   var closeBtn = wrapper.querySelector(".tf-close");
@@ -362,10 +343,7 @@
   var newConvoBtn = wrapper.querySelector(".tf-new-convo");
   var messagesEl = wrapper.querySelector("#tf-messages");
 
-  // ---- Scroll-lock: never let scrolling inside the chat bleed into the
-  // page behind it. CSS overscroll-behavior handles most modern browsers,
-  // but this JS-level guard is the reliable fallback for every browser
-  // and for trackpad/touch gestures that don't always respect it.
+  // stops scrolling inside the chat from also scrolling the page behind it
   (function attachScrollLock(el) {
     function clamp(val, min, max) {
       return Math.min(Math.max(val, min), max);
@@ -400,9 +378,7 @@
         var deltaY = touchStartY - currentY;
         var atTop = el.scrollTop <= 0;
         var atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
-        // Only block the page from scrolling when the gesture would push
-        // past the top or bottom edge of the chat; otherwise let the chat
-        // itself scroll normally.
+        // only block the page scroll once we've hit the top/bottom edge
         if ((atTop && deltaY < 0) || (atBottom && deltaY > 0)) {
           e.preventDefault();
         }
@@ -416,9 +392,7 @@
   var iconChat = wrapper.querySelector(".tf-icon-chat");
   var iconClose = wrapper.querySelector(".tf-icon-close");
 
-  // Category cards shown on the welcome screen. Each has a matching
-  // scripted opening reply in SCRIPTED_FLOWS below, so clicking a card
-  // starts an instant, on-brand conversation instead of waiting on the API.
+  // welcome-screen cards - each one has a matching reply in SCRIPTED_FLOWS below
   var CATEGORY_CARDS = [
     { id: "saas", icon: "rocket", iconBg: "#dce7ff", iconColor: "#2563eb", title: "Build a SaaS", sub: "Launch your SaaS platform faster" },
     { id: "ai", icon: "bot", iconBg: "#ede9fe", iconColor: "#7c3aed", title: "AI Development", sub: "AI solutions tailored to your business" },
@@ -428,34 +402,32 @@
     { id: "estimate", icon: "calculator", iconBg: "#ccfbf1", iconColor: "#0d9488", title: "Project Estimate", sub: "Get cost & timeline estimation" },
   ];
 
-  // Scripted first reply + suggestion chips for each category card, written
-  // in Maya's voice. These render instantly (no API call) so clicking a card
-  // never waits on a network round trip; the real AI takes over from the
-  // visitor's next message onward (with this exchange already in context).
+  // canned opening replies so clicking a card feels instant (no API wait) -
+  // the real AI takes over from there once the visitor replies
   var SCRIPTED_FLOWS = {
     saas: {
-      reply: "That's exciting! \uD83D\uDE80\n\nI'd love to help you plan your SaaS.\n\nTo recommend the right architecture, I'd like to understand your idea first. What type of SaaS are you planning to build?",
+      reply: "That's exciting!\n\nI'd love to help you plan your SaaS.\n\nTo recommend the right architecture, I'd like to understand your idea first. What type of SaaS are you planning to build?",
       suggestions: ["CRM", "Marketplace", "AI SaaS", "Internal Tool", "Other"],
     },
     ai: {
-      reply: "Great! \uD83E\uDD16 AI can genuinely transform how your business runs.\n\nWhat would you like AI to help with?",
+      reply: "Great! AI can genuinely transform how your business runs.\n\nWhat would you like AI to help with?",
       suggestions: ["Chatbot", "AI Automation", "AI Agent", "Document AI", "Vision AI"],
     },
     website: {
-      reply: "Great choice! \uD83C\uDF10\n\nI'd love to learn more. Is this website for:",
+      reply: "Great choice!\n\nI'd love to learn more. Is this website for:",
       suggestions: ["Startup", "Company", "Personal Brand", "Portfolio", "Ecommerce"],
     },
     mobile: {
-      reply: "Nice! \uD83D\uDCF1 Let's plan the right app for your users.\n\nWho is this app mainly for?",
+      reply: "Nice! Let's plan the right app for your users.\n\nWho is this app mainly for?",
       suggestions: ["iOS", "Android", "Both iOS & Android", "Not sure yet"],
     },
     uiux: {
-      reply: "Love that! \uD83C\uDFA8 Good design makes all the difference.\n\nWhat are you looking to design?",
+      reply: "Love that! Good design makes all the difference.\n\nWhat are you looking to design?",
       suggestions: ["New Product", "Redesign", "Design System", "Landing Page"],
     },
     estimate: {
-      reply: "I'd be happy to estimate your project. \uD83D\uDCB0\n\nI'll ask just a few quick questions - it usually takes less than 2 minutes.",
-      suggestions: ["Let's start \u2192"],
+      reply: "I'd be happy to estimate your project.\n\nI'll ask just a few quick questions - it usually takes less than 2 minutes.",
+      suggestions: ["Let's start"],
     },
   };
 
@@ -466,7 +438,7 @@
     "Show me your portfolio",
   ];
 
-  // ---- State: conversation history (persisted per browser tab) -------------
+  // ---- chat history, saved per tab ----
   var history = loadHistory();
 
   function loadHistory() {
@@ -482,13 +454,11 @@
     try {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(history));
     } catch (e) {
-      /* storage unavailable - conversation just won't persist on refresh */
+      /* no sessionStorage? chat just won't persist on refresh, that's fine */
     }
   }
 
-  // ---- Lightweight formatting: escape HTML, then turn **bold** and
-  // "- " / "\u2022 " bullet lines into real <strong> and <ul><li> markup so
-  // pricing/service lists read like clean cards instead of a wall of text.
+  // turns **bold** and "- " bullet lines into real HTML
   function escapeHtml(str) {
     return str
       .replace(/&/g, "&amp;")
@@ -529,18 +499,15 @@
     return line.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
   }
 
-  // ---- Marker extraction (LEAD capture + suggested replies) ----------------
+  // ---- pulling out the [[LEAD:...]] / [[SUGGEST:...]] markers ----
   var URL_REGEX = /https?:\/\/[^\s)]+/g;
   var MARKDOWN_LINK_REGEX = /\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g;
   var EMPTY_MARKDOWN_LINK_REGEX = /\[([^\]]*)\]\(\s*\)/g;
   var LEAD_MARKER_REGEX = /\[\[LEAD:name=([^;]+);email=([^\]]+)\]\]/i;
   var SUGGEST_MARKER_REGEX = /\[\[SUGGEST:([^\]]+)\]\]/i;
 
-  // Some replies use markdown link syntax like "[Click here](https://...)"
-  // instead of a bare URL. Pull the real URL out of that syntax (so it still
-  // becomes a button) and strip the bracket/parenthesis wrapper entirely -
-  // including the rare case where the model leaves an empty "[label]()"
-  // behind - so no link-syntax artifacts ever reach the visitor.
+  // occasionally the model writes "[Click here](url)" instead of a plain
+  // link - this pulls the url out and drops the brackets either way
   function extractMarkdownLinks(text) {
     var extractedUrls = [];
     var cleaned = text.replace(MARKDOWN_LINK_REGEX, function (match, label, url) {
@@ -608,18 +575,15 @@
     return { text: "\uD83D\uDD17 Open Link", variant: "secondary" };
   }
 
-  // Strips markdown markers for the typing animation (raw ** and - would
-  // look odd mid-type); the final formatted HTML is swapped in once typing
-  // completes.
+  // plain-text version for the typing animation (raw ** looks weird mid-type)
   function stripMarkdownForTyping(text) {
     return text
       .replace(/\*\*(.+?)\*\*/g, "$1")
       .replace(/^[ \t]*[-\u2022][ \t]+/gm, "\u2022 ");
   }
 
-  // Reveals `plainText` into `el` character-by-character like real typing.
-  // Total duration is bounded (not proportional to length forever) so long
-  // replies don't take forever, but short ones still feel deliberate.
+  // types plainText into el character by character, capped so long replies
+  // don't take forever
   function typewriterReveal(el, plainText, onComplete) {
     var total = plainText.length;
     if (total === 0) {
@@ -644,14 +608,13 @@
     }, STEP_MS);
   }
 
-  // ---- Rendering -------------------------------------------------------
+  // ---- rendering messages ----
   function renderMessage(role, rawText, onDone) {
     var text = rawText;
     var urls = [];
 
     if (role === "assistant") {
-      // Safety net: swap any em-dash for a comma, in case the model uses
-      // one despite the system prompt asking it not to.
+      // model sometimes uses em-dashes anyway, swap them for commas
       text = text.replace(/\s*\u2014\s*/g, ", ");
 
       var mdParsed = extractMarkdownLinks(text);
@@ -683,10 +646,8 @@
       return;
     }
 
-    // Assistant messages render as a single left-aligned column:
-    // bubble (typed out) -> (optional link buttons) -> small avatar +
-    // "Maya · role" attribution underneath. Links, attribution, and any
-    // suggestion chips only appear once the typing animation finishes.
+    // assistant messages: bubble on top, then links/avatar caption once
+    // typing finishes
     var finalText = text || rawText;
     var block = document.createElement("div");
     block.className = "tf-msg-block tf-fade-in";
@@ -831,12 +792,9 @@
     });
   }
 
-  // Runs when a welcome-screen category card is clicked: fades the welcome
-  // screen out, drops in the visitor's "choice" as a user bubble, shows a
-  // brief typing pause, then reveals Maya's scripted opening reply (with
-  // her avatar + name/role caption) and any follow-up suggestion chips.
-  // No API call happens here - it's instant and free; the real backend
-  // takes over once the visitor responds to a suggestion or types freely.
+  // handles a welcome-screen card click: fade out the welcome screen,
+  // show the pick as a user message, then Maya's scripted reply. no API
+  // call yet, that only kicks in once the visitor actually replies.
   function startScriptedFlow(card) {
     var flow = SCRIPTED_FLOWS[card.id];
     if (!flow) return;
@@ -883,7 +841,7 @@
     if (el) el.remove();
   }
 
-  // ---- Networking --------------------------------------------------------
+  // ---- talking to the backend ----
   function sendMessage(text) {
     text = (text || "").trim();
     if (!text) return;
@@ -939,7 +897,7 @@
       });
   }
 
-  // ---- UI interactions -----------------------------------------------------
+  // ---- open/close, menu, etc ----
   function openPanel() {
     panel.classList.add("tf-open");
     panel.classList.remove("tf-minimized");
@@ -1003,6 +961,6 @@
   }
   input.addEventListener("input", autoResize);
 
-  // ---- Init ----------------------------------------------------------------
+  // ---- go ----
   renderConversation();
 })();
